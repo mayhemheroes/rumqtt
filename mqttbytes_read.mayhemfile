@@ -1,0 +1,5 @@
+project: rumqtt
+target: mqttbytes_read
+
+cmds:
+  - cmd: /mqttbytes_read
