@@ -3,25 +3,15 @@ on:
   push:
   pull_request:
   workflow_dispatch:
-      
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  DISK: disk.mayhemfile
 
 jobs:
   build:
-    name: '${{ matrix.os }} shared=${{ matrix.shared }} ${{ matrix.build_type }}'
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        shared: [false]
-        build_type: [Release]
-        include:
-          - os: ubuntu-latest
-            triplet: x64-linux
-
+    name: 'build mayhem fuzzing container'
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
 
@@ -42,14 +32,29 @@ jobs:
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
         with:
           context: .
+          file: mayhem/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Start analysis for DISK
+    outputs:
+      image: ${{ steps.meta.outputs.tags }}
+
+  mayhem:
+    needs: build
+    name: 'fuzz ${{ matrix.mayhemfile }}'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        mayhemfile:
+          - mayhem/mqttbytes_read.mayhemfile
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Start analysis for ${{ matrix.mayhemfile }}
         uses: ForAllSecure/mcode-action@v1
         with:
           mayhem-token: ${{ secrets.MAYHEM_TOKEN }}
-          args: --image ${{ steps.meta.outputs.tags }} --file ${{ env.DISK }}
+          args: --image ${{ needs.build.outputs.image }} --file ${{ matrix.mayhemfile }} --duration 300
           sarif-output: sarif
-

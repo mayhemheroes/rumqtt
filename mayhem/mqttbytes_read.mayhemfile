@@ -3,3 +3,5 @@ target: mqttbytes_read
 
 cmds:
   - cmd: /mqttbytes_read
+  - cmd: /mqttbytes_read_no_inst @@
+    libfuzzer: false
