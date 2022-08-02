@@ -1,0 +1,7 @@
+project: rumqtt
+target: mqttbytes-read
+
+cmds:
+  - cmd: /mqttbytes_read
+  - cmd: /mqttbytes_read_no_inst @@
+    libfuzzer: false
